@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HydroHelp911 Dashboards</title>
+
+<!-- Home Screen app (iPhone / iPad) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HH911 Dashboards">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#112337">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+/* ============================================================
+   DASHBOARDS: the only part to edit.
+   url  = the dashboard's live web app link (ends in /exec).
+   Add, remove or reorder entries here; the Menu follows.
+   ============================================================ */
+window.DASHBOARDS = [
+  {
+    id: 'production',
+    name: 'Production Scorecard',
+    blurb: 'Crew revenue, reviews, overtime',
+    url: 'PASTE_PRODUCTION_EXEC_URL'
+  },
+  {
+    id: 'callcenter',
+    name: 'Call Center',
+    blurb: 'Lace AI calls & Office queue',
+    url: 'PASTE_CALL_CENTER_EXEC_URL'
+  },
+  {
+    id: 'sales',
+    name: 'Sales Scorecard',
+    blurb: 'Rep leaderboard by NSLI',
+    url: 'PASTE_SALES_EXEC_URL'
+  }
+];
+</script>
+
+<style>
+  :root {
+    --head-bg: #112337;
+    --head-line: #2A4363;
+    --head-ink: #FFFFFF;
+    --head-muted: #B4BFCC;
+    --bg: #0B1622;
+    --sheet: #13283F;
+    --sheet-line: #24405F;
+    --ink: #F5F5F5;
+    --muted: #A3A9B4;
+    --accent: #9FB8D6;
+    --red: #C10001;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --head-h: 56px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: 'Spline Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { display: flex; flex-direction: column; height: 100dvh; }
+
+  /* ---------- Header ---------- */
+  header {
+    flex: none;
+    padding: var(--safe-t) calc(12px + var(--safe-r)) 0 calc(12px + var(--safe-l));
+    background: var(--head-bg);
+    border-bottom: 1px solid var(--head-line);
+    color: var(--head-ink);
+  }
+  .bar { height: var(--head-h); display: flex; align-items: center; gap: 12px; }
+  .menu-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 40px; padding: 0 14px 0 10px;
+    background: transparent; color: var(--head-ink);
+    border: 1px solid var(--head-line); border-radius: 10px;
+    font: 600 15px/1 inherit; font-family: inherit; cursor: pointer;
+  }
+  .menu-btn:active { background: var(--head-line); }
+  .menu-btn svg { width: 22px; height: 22px; }
+  .title { min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .title .name { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .title .sub { font-size: 12px; color: var(--head-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .logo { height: 26px; width: auto; flex: none; }
+  .icon-btn {
+    flex: none; width: 40px; height: 40px; display: grid; place-items: center;
+    background: transparent; border: 1px solid var(--head-line); border-radius: 10px;
+    color: var(--head-ink); cursor: pointer;
+  }
+  .icon-btn:active { background: var(--head-line); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  @media (max-width: 520px) { .logo { display: none; } }
+
+  /* ---------- Dashboard frames ---------- */
+  main { position: relative; flex: 1; min-height: 0; padding-bottom: var(--safe-b); background: var(--bg); }
+  iframe {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; background: var(--bg); visibility: hidden;
+  }
+  iframe.active { visibility: visible; }
+  .state {
+    position: absolute; inset: 0; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    padding: 24px; text-align: center; color: var(--muted); font-size: 15px;
+  }
+  .state.show { display: flex; }
+  .state b { color: var(--ink); }
+  .spinner {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid var(--sheet-line); border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Menu ---------- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  nav {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 11;
+    width: min(340px, 86vw);
+    padding: calc(var(--safe-t) + 14px) 14px calc(var(--safe-b) + 14px) calc(14px + var(--safe-l));
+    background: var(--sheet); border-right: 1px solid var(--sheet-line);
+    transform: translateX(-102%); transition: transform .25s ease;
+    display: flex; flex-direction: column; gap: 6px; overflow-y: auto;
+  }
+  nav.open { transform: none; }
+  .nav-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 14px; }
+  .nav-head img { height: 28px; width: auto; }
+  .nav-label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 6px 4px; }
+  .dash {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 14px 12px; border-radius: 12px; border: 1px solid transparent;
+    background: transparent; color: var(--ink); text-align: left; cursor: pointer; font-family: inherit;
+  }
+  .dash:active { background: var(--sheet-line); }
+  .dash.active { background: var(--head-bg); border-color: var(--sheet-line); }
+  .dash .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--sheet-line); }
+  .dash.active .dot { background: var(--red); }
+  .dash .txt { min-width: 0; }
+  .dash .n { font-weight: 600; font-size: 16px; }
+  .dash .b { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .nav-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--sheet-line); display: flex; flex-direction: column; gap: 8px; }
+  .nav-foot a {
+    display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 12px;
+    color: var(--accent); text-decoration: none; font-size: 14px;
+  }
+  .nav-foot a:active { background: var(--sheet-line); }
+  .nav-foot a svg { width: 18px; height: 18px; }
+  .hint { font-size: 12px; color: var(--muted); padding: 0 12px; line-height: 1.45; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-controls="menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      Menu
+    </button>
+    <div class="title">
+      <div class="name" id="curName">Dashboards</div>
+      <div class="sub" id="curSub">HydroHelp911</div>
+    </div>
+    <img class="logo" src="logo-white.png" alt="HydroHelp911">
+    <button class="icon-btn" id="reloadBtn" aria-label="Reload this dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="stage">
+  <div class="state" id="loading"><div class="spinner"></div><div>Loading <span id="loadingName"></span>…</div></div>
+  <div class="state" id="missing"></div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<nav id="menu" aria-label="Dashboards">
+  <div class="nav-head"><img src="logo-white.png" alt="HydroHelp911"></div>
+  <div class="nav-label">Dashboards</div>
+  <div id="dashList"></div>
+  <div class="nav-foot">
+    <a id="openOut" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+      Open this dashboard in Safari
+    </a>
+    <div class="hint">Dashboards update on their own. Use ↻ at the top to reload one now.</div>
+  </div>
+</nav>
+
+<script>
+(function () {
+  var list = window.DASHBOARDS || [];
+  var stage = document.getElementById('stage');
+  var menu = document.getElementById('menu');
+  var scrim = document.getElementById('scrim');
+  var menuBtn = document.getElementById('menuBtn');
+  var dashList = document.getElementById('dashList');
+  var loading = document.getElementById('loading');
+  var missing = document.getElementById('missing');
+  var frames = {};      // id -> iframe (kept loaded so switching back is instant)
+  var loaded = {};      // id -> true once the frame has finished loading
+  var current = null;
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function isReady(d) { return /^https:\/\//.test(d.url); }
+  function byId(id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+
+  // Build the Menu
+  list.forEach(function (d) {
+    var b = document.createElement('button');
+    b.className = 'dash'; b.dataset.id = d.id;
+    b.innerHTML = '<span class="dot"></span><span class="txt"><div class="n"></div><div class="b"></div></span>';
+    b.querySelector('.n').textContent = d.name;
+    b.querySelector('.b').textContent = d.blurb || '';
+    b.addEventListener('click', function () { show(d.id); closeMenu(); });
+    dashList.appendChild(b);
+  });
+
+  function openMenu() { menu.classList.add('open'); scrim.classList.add('open'); menuBtn.setAttribute('aria-expanded', 'true'); }
+  function closeMenu() { menu.classList.remove('open'); scrim.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+  menuBtn.addEventListener('click', function () { menu.classList.contains('open') ? closeMenu() : openMenu(); });
+  scrim.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+
+  function show(id) {
+    var d = byId(id) || list[0];
+    if (!d) return;
+    current = d.id;
+    store('hh911-dash', d.id);
+    if (location.hash !== '#' + d.id) history.replaceState(null, '', '#' + d.id);
+
+    document.getElementById('curName').textContent = d.name;
+    document.getElementById('curSub').textContent = d.blurb || 'HydroHelp911';
+    document.title = d.name + ' · HydroHelp911';
+    document.getElementById('openOut').href = isReady(d) ? d.url : '#';
+    Array.prototype.forEach.call(dashList.children, function (b) { b.classList.toggle('active', b.dataset.id === d.id); });
+    Object.keys(frames).forEach(function (k) { frames[k].classList.toggle('active', k === d.id); });
+
+    missing.classList.remove('show');
+    if (!isReady(d)) {
+      loading.classList.remove('show');
+      missing.innerHTML = '<b></b><div>This dashboard\'s link hasn\'t been added yet.</div>';
+      missing.querySelector('b').textContent = d.name;
+      missing.classList.add('show');
+      return;
+    }
+    if (!frames[d.id]) {
+      var f = document.createElement('iframe');
+      f.title = d.name;
+      f.src = d.url;
+      f.setAttribute('allow', 'fullscreen');
+      f.addEventListener('load', function () { loaded[d.id] = true; if (current === d.id) loading.classList.remove('show'); });
+      frames[d.id] = f;
+      stage.appendChild(f);
+      f.classList.add('active');
+    }
+    document.getElementById('loadingName').textContent = d.name;
+    loading.classList.toggle('show', !loaded[d.id]);
+  }
+
+  document.getElementById('reloadBtn').addEventListener('click', function () {
+    var d = byId(current); var f = frames[current];
+    if (!d || !f) return;
+    loaded[current] = false; loading.classList.add('show');
+    f.src = d.url;
+  });
+
+  window.addEventListener('hashchange', function () { var id = location.hash.slice(1); if (id && id !== current) show(id); });
+
+  show(location.hash.slice(1) || recall('hh911-dash') || (list[0] && list[0].id));
+})();
+</script>
+</body>
+</html>
